@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ワクワク！1-110 くじ引き</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+            touch-action: manipulation;
+        }
+        .ball-animation {
+            animation: bounce 0.5s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-20px); }
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white/90 backdrop-blur-sm p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border-8 border-yellow-400">
+        <h1 class="text-3xl font-extrabold text-pink-600 mb-6 drop-shadow-sm">
+            ✨ なにがでるかな？ ✨
+        </h1>
+
+        <!-- くじ引きの箱エリア -->
+        <div id="box-container" class="relative py-10">
+            <div id="kuji-box" class="text-9xl mb-4 cursor-pointer hover:scale-110 transition-transform active:scale-95">
+                🎁
+            </div>
+            <p id="instruction" class="text-gray-600 font-bold text-lg">
+                はこを タップしてね！
+            </p>
+        </div>
+
+        <!-- 結果表示エリア（最初は隠しておく） -->
+        <div id="result-container" class="hidden">
+            <div id="number-display" class="text-8xl font-black text-orange-500 mb-4 scale-0 transition-transform duration-500">
+                0
+            </div>
+            <div id="message-display" class="text-2xl font-bold text-pink-500 mb-8">
+                おめでとう！
+            </div>
+        </div>
+
+        <!-- ボタン -->
+        <button id="draw-button" class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold py-4 px-10 rounded-full text-2xl shadow-lg hover:shadow-xl transform transition hover:-translate-y-1 active:translate-y-0 w-full mb-4">
+            くじをひく！
+        </button>
+
+        <button id="reset-button" class="hidden text-gray-500 font-bold hover:underline">
+            もういっかい やる
+        </button>
+
+        <!-- 履歴表示 -->
+        <div class="mt-8 pt-6 border-t-2 border-dashed border-gray-300">
+            <p class="text-sm text-gray-400 mb-2">でた数字の きろく</p>
+            <div id="history" class="flex flex-wrap justify-center gap-2">
+                <!-- 履歴がここに入る -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const kujiBox = document.getElementById('kuji-box');
+        const instruction = document.getElementById('instruction');
+        const resultContainer = document.getElementById('result-container');
+        const boxContainer = document.getElementById('box-container');
+        const numberDisplay = document.getElementById('number-display');
+        const drawButton = document.getElementById('draw-button');
+        const resetButton = document.getElementById('reset-button');
+        const historyContainer = document.getElementById('history');
+
+        let isDrawing = false;
+
+        function startDraw() {
+            if (isDrawing) return;
+            isDrawing = true;
+
+            // UIリセット
+            kujiBox.classList.add('shake');
+            drawButton.disabled = true;
+            drawButton.classList.add('opacity-50');
+            instruction.innerText = "ドキドキ...";
+
+            // ドラムロール演出
+            let count = 0;
+            const interval = setInterval(() => {
+                kujiBox.innerText = count % 2 === 0 ? "🎁" : "📦";
+                count++;
+            }, 100);
+
+            // 1.5秒後に結果発表
+            setTimeout(() => {
+                clearInterval(interval);
+                kujiBox.classList.remove('shake');
+                showResult();
+            }, 1500);
+        }
+
+        function showResult() {
+            // 範囲を1から110に変更
+            const randomNumber = Math.floor(Math.random() * 110) + 1;
+            
+            // 表示切り替え
+            boxContainer.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+            
+            // 数字のアニメーション
+            numberDisplay.innerText = randomNumber;
+            setTimeout(() => {
+                numberDisplay.classList.remove('scale-0');
+                numberDisplay.classList.add('scale-100', 'ball-animation');
+                
+                // 紙吹雪！
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#FFD700', '#FF69B4', '#00CED1', '#ADFF2F']
+                });
+            }, 50);
+
+            // 履歴に追加
+            const historyItem = document.createElement('span');
+            historyItem.className = "bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm font-bold";
+            historyItem.innerText = randomNumber;
+            historyContainer.prepend(historyItem);
+
+            drawButton.classList.add('hidden');
+            resetButton.classList.remove('hidden');
+            isDrawing = false;
+        }
+
+        function resetKuji() {
+            boxContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            numberDisplay.classList.add('scale-0');
+            numberDisplay.classList.remove('ball-animation');
+            kujiBox.innerText = "🎁";
+            instruction.innerText = "はこを タップしてね！";
+            drawButton.classList.remove('hidden', 'opacity-50');
+            drawButton.disabled = false;
+            resetButton.classList.add('hidden');
+        }
+
+        drawButton.addEventListener('click', startDraw);
+        kujiBox.addEventListener('click', startDraw);
+        resetButton.addEventListener('click', resetKuji);
+    </script>
+</body>
+</html>
